@@ -338,5 +338,7 @@ int main(int argc, char** argv) {
   }
 
   WriteFileOrDie(argv[opt_idx + 1], out_data);
+
+  fprintf(stdout, "Processed: '%s' -> '%s'\n", argv[opt_idx], argv[opt_idx + 1]);
   return 0;
 }
