@@ -22,6 +22,7 @@
 #include <string>
 #include <sstream>
 #include <string.h>
+#include <fstream>
 #include "png.h"
 #include "guetzli/jpeg_data.h"
 #include "guetzli/jpeg_data_reader.h"
@@ -42,6 +43,12 @@ constexpr int kDefaultMemlimitMB = 6000; // in MB
 
 inline uint8_t BlendOnBlack(const uint8_t val, const uint8_t alpha) {
   return (static_cast<int>(val) * static_cast<int>(alpha) + 128) / 255;
+}
+
+bool DoesFileExists(const char *fileName)
+{
+    std::ifstream infile(fileName);
+    return infile.good();
 }
 
 bool ReadPNG(const std::string& data, int* xsize, int* ysize,
@@ -218,6 +225,7 @@ void Usage() {
       "guetzli [flags] input_filename output_filename\n"
       "\n"
       "Flags:\n"
+      "  --force      - Force/Override output destination if already exists.\n"
       "  --verbose    - Print a verbose trace of all attempts to standard output.\n"
       "  --quality Q  - Visual quality to aim for, expressed as a JPEG quality value.\n"
       "                 Default value is %d.\n"
@@ -235,6 +243,7 @@ int main(int argc, char** argv) {
   int verbose = 0;
   int quality = kDefaultJPEGQuality;
   int memlimit_mb = kDefaultMemlimitMB;
+  bool override_output = false;
 
   int opt_idx = 1;
   for(;opt_idx < argc;opt_idx++) {
@@ -242,6 +251,8 @@ int main(int argc, char** argv) {
       break;
     if (!strcmp(argv[opt_idx], "--verbose")) {
       verbose = 1;
+    } else if (!strcmp(argv[opt_idx], "--force")) {
+      override_output = true;
     } else if (!strcmp(argv[opt_idx], "--quality")) {
       opt_idx++;
       if (opt_idx >= argc)
@@ -265,6 +276,11 @@ int main(int argc, char** argv) {
 
   if (argc - opt_idx != 2) {
     Usage();
+  }
+
+  if (DoesFileExists(argv[opt_idx + 1]) && !override_output) {
+    fprintf(stderr, "Output file '%s' already exists, skipping.\n", argv[opt_idx + 1]);
+    return 1;
   }
 
   std::string in_data = ReadFileOrDie(argv[opt_idx]);
