@@ -279,7 +279,8 @@ int main(int argc, char** argv) {
   }
 
   if (DoesFileExists(argv[opt_idx + 1]) && !override_output) {
-    fprintf(stderr, "Output file '%s' already exists, skipping.\n", argv[opt_idx + 1]);
+    fprintf(stderr, "Skipped: \"%s\" -> \"%s\". Reason: Output file already exists\n",
+            argv[opt_idx], argv[opt_idx + 1]);
     return 1;
   }
 
@@ -304,41 +305,47 @@ int main(int argc, char** argv) {
     int xsize, ysize;
     std::vector<uint8_t> rgb;
     if (!ReadPNG(in_data, &xsize, &ysize, &rgb)) {
-      fprintf(stderr, "Error reading PNG data from input file '%s'\n", argv[opt_idx]);
+      fprintf(stderr, "Errored: \"%s\" -> \"%s\". Reason: Error reading PNG data from input file\n",
+              argv[opt_idx], argv[opt_idx + 1]);
       return 1;
     }
     double pixels = static_cast<double>(xsize) * ysize;
     if (memlimit_mb != -1
         && (pixels * kBytesPerPixel / (1 << 20) > memlimit_mb
             || memlimit_mb < kLowestMemusageMB)) {
-      fprintf(stderr, "Memory limit would be exceeded. Failing. File: '%s'\n", argv[opt_idx]);
+      fprintf(stderr, "Errored: \"%s\" -> \"%s\". Reason: Memory limit would be exceeded\n",
+              argv[opt_idx], argv[opt_idx + 1]);
       return 1;
     }
     if (!guetzli::Process(params, &stats, rgb, xsize, ysize, &out_data)) {
-      fprintf(stderr, "Guetzli processing failed for file '%s'\n", argv[opt_idx]);
+      fprintf(stderr, "Errored: \"%s\" -> \"%s\". Reason: Guetzli processing failed\n",
+              argv[opt_idx], argv[opt_idx + 1]);
       return 1;
     }
   } else {
     guetzli::JPEGData jpg_header;
     if (!guetzli::ReadJpeg(in_data, guetzli::JPEG_READ_HEADER, &jpg_header)) {
-      fprintf(stderr, "Error reading JPG data from input file '%s'\n", argv[opt_idx]);
+      fprintf(stderr, "Errored: \"%s\" -> \"%s\". Reason: Error reading JPG data from input file\n",
+              argv[opt_idx], argv[opt_idx + 1]);
       return 1;
     }
     double pixels = static_cast<double>(jpg_header.width) * jpg_header.height;
     if (memlimit_mb != -1
         && (pixels * kBytesPerPixel / (1 << 20) > memlimit_mb
             || memlimit_mb < kLowestMemusageMB)) {
-      fprintf(stderr, "Memory limit would be exceeded. Failing. File: '%s'\n", argv[opt_idx]);
+      fprintf(stderr, "Errored: \"%s\" -> \"%s\". Reason: Memory limit would be exceeded\n",
+              argv[opt_idx], argv[opt_idx + 1]);
       return 1;
     }
     if (!guetzli::Process(params, &stats, in_data, &out_data)) {
-      fprintf(stderr, "Guetzli processing failed for file '%s'\n", argv[opt_idx]);
+      fprintf(stderr, "Errored: \"%s\" -> \"%s\". Reason: Guetzli processing failed\n",
+              argv[opt_idx], argv[opt_idx + 1]);
       return 1;
     }
   }
 
   WriteFileOrDie(argv[opt_idx + 1], out_data);
 
-  fprintf(stdout, "Processed: '%s' -> '%s'\n", argv[opt_idx], argv[opt_idx + 1]);
+  fprintf(stdout, "Processed: \"%s\" -> \"%s\"\n", argv[opt_idx], argv[opt_idx + 1]);
   return 0;
 }
